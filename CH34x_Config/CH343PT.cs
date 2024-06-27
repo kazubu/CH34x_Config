@@ -70,19 +70,40 @@ namespace CH34x_Config
         [return: MarshalAs(UnmanagedType.U4)]
         public static extern uint CH343PT_GetVersion();
 
-        [DllImport(DLL_NAME)]
+        [DllImport(DLL_NAME, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CH343PT_NameIsCH34x(string iPortName);
 
         [DllImport(DLL_NAME)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CH343PT_HandleIsCH34x(SafeFileHandle iPortHandle);
 
         [DllImport(DLL_NAME)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CH343PT_EnterConfigMode(SafeFileHandle iPortHandle);
 
         [DllImport(DLL_NAME)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CH343PT_ExitConfigMode(SafeFileHandle iPortHandle);
 
-        [DllImport(DLL_NAME)]
+        [DllImport(DLL_NAME, CharSet = CharSet.Unicode)]
         public static extern byte CH343PT_GetChipProperty(SafeFileHandle iPortHandle, out ChipPropertyS chipPropertyS);
+
+        [DllImport (DLL_NAME, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CH343PT_ReadDevConfig(SafeFileHandle iPortHandle, [MarshalAs(UnmanagedType.U4)] ref uint DataLen, [MarshalAs(UnmanagedType.LPArray)] byte[] DataBuf);
+
+
+        [DllImport(DLL_NAME, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CH343PT_WriteDevConfig(SafeFileHandle iPortHandle, [MarshalAs(UnmanagedType.U4)] uint BufferSize, [MarshalAs(UnmanagedType.LPArray)] byte[] DataBuf);
+
+        [DllImport(DLL_NAME, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CH343PT_ReadCfgEeprom_Byte(SafeFileHandle iPortHandle, [MarshalAs(UnmanagedType.U4)] uint iAddr, ref byte DataBuf);
+
+        [DllImport(DLL_NAME, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CH343PT_WriteCfgEeprom_Byte(SafeFileHandle iPortHandle, [MarshalAs(UnmanagedType.U4)] uint iAddr, byte Data);
     }
 }
