@@ -6,24 +6,42 @@ namespace CH34x_Config
 {
     internal class CH34x
     {
-        SafeFileHandle com_handle;
-        public ChipPropertyS property;
-        public USERCFG_340 configuration;
-        public bool configReadSuccess = false;
-        public CH34x(string com_port)
-        {
-            com_handle = File.OpenHandle(path: "\\\\.\\" + com_port, mode: FileMode.Open, access: FileAccess.ReadWrite);
+        public ChipPropertyS property { get; private set; }
+        public USERCFG_340 configuration { get; private set; }
+        public bool configReadSuccess { get; private set; } = false;
 
-            if(!CH343PT.CH343PT_HandleIsCH34x(com_handle))
+        private SafeFileHandle com_handle;
+        private readonly string PortName;
+
+        public CH34x(string portName)
+        {
+            PortName = portName;
+
+            InitializeCOMPortHandle();
+            if(com_handle == null)
             {
-                throw new Exception("Specified COM port is not CH34x");
+                throw new Exception("Failed to initialize COM Port Handle.");
             }
+            
             property = GetChipProperty();
             if(property.ChipType != (byte)CH343PT.CHIP_TYPE.CH340)
             {
                 throw new Exception("Not supported device detected:" + property.ChipTypeStr);
             }
             configuration = GetChipConfiguration();
+        }
+
+        private void InitializeCOMPortHandle()
+        {
+            if (com_handle == null || com_handle.IsClosed)
+            {
+                com_handle = File.OpenHandle(path: @"\\.\" + PortName, mode: FileMode.Open, access: FileAccess.ReadWrite);
+
+                if (!CH343PT.CH343PT_HandleIsCH34x(com_handle))
+                {
+                    throw new Exception("Specified COM port is not CH34x");
+                }
+            }
         }
 
         public static string GetLibraryVersion()
@@ -87,16 +105,26 @@ namespace CH34x_Config
             Array.Copy(prodbytes, buf, prodbytes.Length);
             
             configuration.PROD_LEN = (byte)(prodbytes.Length + 2);
+            configuration.PROD_HDR = 0x03;
             configuration.PROD = buf;
+        }
+
+        public void ClearProductString()
+        {
+            configuration.PROD_LEN = 0;
+            configuration.PROD_HDR = 0;
+            configuration.PROD = new byte[36];
         }
 
         public void ReadChipConfiguration()
         {
+            InitializeCOMPortHandle();
             configuration = GetChipConfiguration();
         }
 
         public void SaveChipConfiguration()
         {
+            InitializeCOMPortHandle();
             if (!CH343PT.CH343PT_EnterConfigMode(com_handle))
             {
                 throw new Exception("Unknown error for entering configuration mode!!!");
@@ -116,6 +144,7 @@ namespace CH34x_Config
 
         private ChipPropertyS GetChipProperty()
         {
+            InitializeCOMPortHandle();
             ChipPropertyS _chipProperty = new ChipPropertyS();
             CH343PT.CH343PT_GetChipProperty(com_handle, _chipProperty);
 
@@ -124,6 +153,7 @@ namespace CH34x_Config
 
         private USERCFG_340 GetChipConfiguration()
         {
+            InitializeCOMPortHandle();
             if (!CH343PT.CH343PT_EnterConfigMode(com_handle))
             {
                 throw new Exception("Unknown error for entering configuration mode!!!");
@@ -134,7 +164,6 @@ namespace CH34x_Config
             try
             {
                 CH343PT.CH343PT_ReadDevConfig(com_handle, ref blen, buff);
-
             }
             finally
             {
@@ -145,14 +174,13 @@ namespace CH34x_Config
             {
                 configReadSuccess = true;
                 return USERCFG_340.ParseBytes(buff);
-            }catch
+            }
+            catch
             {
                 configReadSuccess = false;
                 return new USERCFG_340();
             }
         }
-
-
     }
 
     [StructLayout(LayoutKind.Sequential)]
