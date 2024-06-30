@@ -9,6 +9,7 @@ class Program
     /// </summary>
     /// <param name="target">COM Port</param>
     /// <param name="v">Print verbose.</param>
+    /// <param name="l">Print list of COM ports</param>
     /// <param name="p">Print chip property. Then exit.</param>
     /// <param name="r">Print chip configuration. Then exit.</param>
     /// <param name="w">Write chip configuration.</param>
@@ -24,6 +25,7 @@ class Program
     public static int Main
         (string target,
         bool v = false,
+        bool l = false,
         bool p = false,
         bool r = false,
         bool w = false,
@@ -39,6 +41,18 @@ class Program
         if (v) { Console.WriteLine("Target port: " + target); };
 
         if (v) { Console.WriteLine("Library version: " + CH34x.GetLibraryVersion()); };
+
+        if (l)
+        {
+            Console.WriteLine("List of COM ports:");
+            List<string> ports = ListComPorts();
+            foreach (string port in ports)
+            {
+                Console.WriteLine(port);
+            }
+
+            return 0;
+        }
 
 
         if (target == null || (p == r == w == false))
@@ -175,6 +189,38 @@ class Program
         }
 
         return 0;
+    }
+
+    private static List<string> ListComPorts()
+    {
+        var items = new List<string>();
+        const string com_regex = "COM([1-9][0-9]?[0-9]?)";
+
+        var CheckComNum = new System.Text.RegularExpressions.Regex(com_regex);
+        System.Management.ManagementClass mcPnPEntity = new System.Management.ManagementClass("Win32_PnPEntity");
+        System.Management.ManagementObjectCollection manageObjCol = mcPnPEntity.GetInstances();
+
+        foreach (System.Management.ManagementObject manageObj in manageObjCol)
+        {
+            var namePropertyValue = manageObj.GetPropertyValue("Name");
+            if (namePropertyValue == null)
+            {
+                continue;
+            }
+            string name = namePropertyValue.ToString();
+            if (CheckComNum.IsMatch(name))
+            {
+                items.Add(name);
+            }
+        }
+        items.Sort(delegate (string x, string y)
+        {
+            var mx = int.Parse(CheckComNum.Match(x).Groups[1].ToString());
+            var my = int.Parse(CheckComNum.Match(y).Groups[1].ToString());
+
+            return mx.CompareTo(my);
+        });
+        return items;
     }
 
     private static void pp(Object obj)
