@@ -9,6 +9,7 @@ namespace CH34x_Config
         public ChipPropertyS property { get; private set; }
         public USERCFG_340 configuration { get; private set; }
         public bool configReadSuccess { get; private set; } = false;
+        public string configReadErrReason { get; private set; } = string.Empty;
 
         private SafeFileHandle com_handle;
         private readonly string PortName;
@@ -50,14 +51,28 @@ namespace CH34x_Config
             return (ver / 16 + "." + ver % 16);
         }
 
+        public void InitializeEEPROM()
+        {
+            configuration.SIG = 0x5B;
+            configuration.MODE = 0x23;
+            configuration.CFG = 0xFE;
+            configuration.WP = 0x00;
+            SetVid(0x1a86);
+            SetPid(0x7523);
+            configuration.Power = 0x31;
+            SetSerialNumber("12345678");
+            configuration.PROD_LEN = 0;
+            configuration.PROD_HDR = 0x03;
+        }
+
         public void EnableSerialNumber()
         {
-            configuration.CFG |= 0x20;
-            configuration.CFG ^= 0x20;
+            configuration.CFG |= 0x8;
+            configuration.CFG ^= 0x8;
         }
         public void DisableSerialNumber()
         {
-            configuration.CFG |= 0x20;
+            configuration.CFG |= 0x8;
         }
 
         public void SetMaxPower(int power)
@@ -175,9 +190,10 @@ namespace CH34x_Config
                 configReadSuccess = true;
                 return USERCFG_340.ParseBytes(buff);
             }
-            catch
+            catch(Exception e)
             {
                 configReadSuccess = false;
+                configReadErrReason = e.Message;
                 return new USERCFG_340();
             }
         }
@@ -238,12 +254,18 @@ namespace CH34x_Config
         {
             if(data.Length < 256)
             {
-                throw new InvalidDataException("length is less than 256");
+                throw new InvalidDataException("Length is less than 256");
             }
-            if (data[0] != 0x5B)
+
+            bool isSeenNoFF = false;
+            foreach (var d in data)
             {
-                throw new InvalidDataException("Signature is invalid.");
+                if (d == 0xff)
+                    isSeenNoFF = true;
             }
+
+            if (isSeenNoFF == false)
+                throw new InvalidDataException("All data is 0xxFF");
 
             var gch = GCHandle.Alloc(data, GCHandleType.Pinned);
             USERCFG_340? result;

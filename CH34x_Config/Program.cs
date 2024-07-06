@@ -13,6 +13,7 @@ class Program
     /// <param name="p">Print chip property. Then exit.</param>
     /// <param name="r">Print chip configuration. Then exit.</param>
     /// <param name="w">Write chip configuration.</param>
+    /// <param name="initialize">Initialize EEPROM (Need to set for first use!)</param>
     /// <param name="vid">USB VID(Hex)</param>
     /// <param name="pid">USB PID(Hex)</param>
     /// <param name="useSn">Use EEPROM Serial [True|False]</param>
@@ -23,12 +24,13 @@ class Program
     /// <param name="dryRun">Do not perform write action.</param>
     /// <returns></returns>
     public static int Main
-        (string target,
+        (string target = "COM5",
         bool v = false,
         bool l = false,
         bool p = false,
         bool r = false,
         bool w = false,
+        bool initialize = false,
         string? vid = null,
         string? pid = null,
         bool? useSn = null,
@@ -99,6 +101,7 @@ class Program
             else
             {
                 Console.Error.WriteLine("Failed to read chip configuration!");
+                Console.Error.WriteLine(ch34x.configReadErrReason);
                 return -1;
             }
 
@@ -116,9 +119,13 @@ class Program
             else
             {
                 Console.Error.WriteLine("Failed to read chip configuration!");
-                //return -1;
+                Console.Error.WriteLine(ch34x.configReadErrReason);
+                
+                return -1;
             }
 
+            if (initialize == true)
+                ch34x.InitializeEEPROM();
             if (vid != null)
                 ch34x.SetVid(UInt16.Parse(vid, System.Globalization.NumberStyles.HexNumber));
             if (pid != null)
@@ -163,6 +170,7 @@ class Program
                 else
                 {
                     Console.Error.WriteLine("Failed to read chip configuration!");
+                    Console.Error.WriteLine(ch34x.configReadErrReason);
                     return -1;
                 }
 
@@ -171,7 +179,19 @@ class Program
                 Console.WriteLine("\nCurrent configuration(in hex):");
                 pb(ch34x.configuration.ToBytes());
 
-                if(ch34x.configuration.ToBytes() != tbw)
+                bool isDifferent = false;
+                for(int i = 0; i < tbw.Length; i++)
+                {
+                    var curr = ch34x.configuration.ToBytes();
+                    if(curr[i] != tbw[i])
+                    {
+                        Console.Error.WriteLine("Err in " + i);
+                        isDifferent = true;
+                        break;
+                    }
+                }
+
+                if (isDifferent)
                 {
                     Console.Error.WriteLine("\nVerification failed!!");
                     return -1;
