@@ -24,7 +24,7 @@ class Program
     /// <param name="dryRun">Do not perform write action.</param>
     /// <returns></returns>
     public static int Main
-        (string target = "COM5",
+        (string target,
         bool v = false,
         bool l = false,
         bool p = false,
