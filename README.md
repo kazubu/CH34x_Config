@@ -10,7 +10,7 @@ Usage:
   CH34x_Config [options]
 
 Options:
-  --target <target>        COM Port [default: COM5]
+  --target <target>        COM Port
   -v                       Print verbose. [default: False]
   -l                       Print list of COM ports [default: False]
   -p                       Print chip property. Then exit. [default: False]
