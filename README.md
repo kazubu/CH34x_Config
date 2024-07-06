@@ -10,11 +10,13 @@ Usage:
   CH34x_Config [options]
 
 Options:
-  --target <target>        COM Port
+  --target <target>        COM Port [default: COM5]
   -v                       Print verbose. [default: False]
+  -l                       Print list of COM ports [default: False]
   -p                       Print chip property. Then exit. [default: False]
   -r                       Print chip configuration. Then exit. [default: False]
   -w                       Write chip configuration. [default: False]
+  --initialize             Initialize EEPROM (Need to set for first use!) [default: False]
   --vid <vid>              USB VID(Hex) []
   --pid <pid>              USB PID(Hex) []
   --use-sn                 Use EEPROM Serial [True|False] []
